@@ -1,3 +1,5 @@
+package br.com.projetorobo.classesrobo;
+
 public class Bomba extends Obstaculo {
     private boolean ativa = true;
 

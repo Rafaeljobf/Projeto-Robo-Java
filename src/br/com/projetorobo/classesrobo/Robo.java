@@ -1,12 +1,18 @@
+package br.com.projetorobo.classesrobo;
+
+import java.util.function.Consumer;
+
 public class Robo {
     protected int x;
     protected int y;
     protected int prevX;
     protected int prevY;
     protected String cor;
-    protected int movimentosValidos = 0;
-    protected int movimentosInvalidos = 0;
+    public int movimentosValidos = 0;
+    public int movimentosInvalidos = 0;
     protected boolean ativo = true;
+    private final int TAMANHO_TABULEIRO = 4;
+    protected Consumer<String> logger = (mensagem) -> {};
 
     public Robo(String cor){
         this.cor = cor;
@@ -80,17 +86,20 @@ public class Robo {
         }
 
 
-        if (novoX < 0 || novoY < 0) {
+        if (novoX < 0 || novoY < 0 || novoX >= TAMANHO_TABULEIRO || novoY >= TAMANHO_TABULEIRO) {
             movimentosInvalidos++;
-            throw new MovimentoInvalidoException(direcao);
-        }
+            String mensagemErro = "Movimento inválido: " + direcao + " (fora dos limites 0-3)";
 
+            logger.accept(cor + " -> " + mensagemErro);
+
+            throw new MovimentoInvalidoException(mensagemErro);
+        }
 
         x = novoX;
         y = novoY;
         movimentosValidos++;
 
-        System.out.println(cor + " moveu para (" + x + ", " + y + ")");
+        logger.accept(cor + " moveu para (" + x + ", " + y + ")");
     }
 
     public void mover(int direcao) throws MovimentoInvalidoException {
@@ -105,6 +114,12 @@ public class Robo {
 
     public boolean encontrou(int fx, int fy) {
         return x == fx && y == fy;
+    }
+
+    public void setLogger(Consumer<String> logger) {
+        if (logger != null) {
+            this.logger = logger;
+        }
     }
 }
 

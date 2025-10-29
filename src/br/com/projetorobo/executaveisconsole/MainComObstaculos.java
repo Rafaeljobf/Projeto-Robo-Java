@@ -1,8 +1,15 @@
+package br.com.projetorobo.executaveisconsole;
+
+import br.com.projetorobo.classesrobo.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
+
+/*
+* QUESTAO 4 DO TRABALHO
+*  */
 public class MainComObstaculos {
 
     final static int TAMANHO = 4;

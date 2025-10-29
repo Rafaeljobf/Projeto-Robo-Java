@@ -1,3 +1,5 @@
+package br.com.projetorobo.classesrobo;
+
 import java.util.Random;
 
 public class RoboInteligente extends Robo {
@@ -17,7 +19,15 @@ public class RoboInteligente extends Robo {
                 movimentoValido = true;
             } catch (MovimentoInvalidoException e) {
 
-                direcao = 1 + rand.nextInt(4);
+                logger.accept(cor + " [Inteligente] -> Recalculando rota...");
+                int direcaoInvalida = direcao;
+                int proximaDirecao;
+
+                do {
+                    proximaDirecao = 1 + rand.nextInt(4);
+                } while (proximaDirecao == direcaoInvalida);
+
+                direcao = proximaDirecao;
             }
         }
     }

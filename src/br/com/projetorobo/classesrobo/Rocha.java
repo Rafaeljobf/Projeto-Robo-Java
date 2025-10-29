@@ -1,7 +1,9 @@
+package br.com.projetorobo.classesrobo;
+
 public class Rocha extends Obstaculo {
 
     public Rocha(int x, int y) {
-        super(x, y, 'R'); // Símbolo da Rocha é 'R'
+        super(x, y, 'R'); // Símbolo da br.com.projetorobo.classesrobo.Rocha é 'R'
     }
 
     @Override

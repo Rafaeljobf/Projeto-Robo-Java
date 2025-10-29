@@ -1,6 +1,13 @@
+package br.com.projetorobo.executaveisconsole;
+
+import br.com.projetorobo.classesrobo.*;
+
 import java.util.Random;
 import java.util.Scanner;
 
+/*
+* QUESTAO 2 DO TRABALHO
+* */
 public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);

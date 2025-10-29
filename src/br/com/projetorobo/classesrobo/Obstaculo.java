@@ -1,3 +1,5 @@
+package br.com.projetorobo.classesrobo;
+
 public abstract class Obstaculo {
     protected int x;
     protected int y;
