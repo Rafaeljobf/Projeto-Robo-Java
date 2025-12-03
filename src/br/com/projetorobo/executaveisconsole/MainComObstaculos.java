@@ -1,40 +1,54 @@
 package br.com.projetorobo.executaveisconsole;
 
 import br.com.projetorobo.classesrobo.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
-
-/*
-* QUESTAO 4 DO TRABALHO
-*  */
 public class MainComObstaculos {
 
-    final static int TAMANHO = 4;
+    private static final int TAMANHO = 4;
+    private static final Scanner scanner = new Scanner(System.in);
+    private static final Random random = new Random();
+
+    // Estado do Jogo
+    private static Robo normal;
+    private static RoboInteligente inteligente;
+    private static List<Obstaculo> obstaculos;
+    private static int foodX, foodY;
+    private static Robo vencedor = null;
 
     public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        Random rand = new Random();
+        configurarJogo();
+        executarCicloDeJogo();
+        exibirResultados();
+        scanner.close();
+    }
 
-        Robo normal = new Robo("Vermelho");
-        RoboInteligente inteligente = new RoboInteligente("Azul");
+    private static void configurarJogo() {
+        normal = new Robo("Vermelho");
+        inteligente = new RoboInteligente("Azul");
+        obstaculos = new ArrayList<>();
 
         System.out.println("=== Cenário 4: Obstáculos ===");
         System.out.print("Digite a posição do alimento (x y) entre 0 e 3: ");
-        int fx = sc.nextInt();
-        int fy = sc.nextInt();
+        foodX = scanner.nextInt();
+        foodY = scanner.nextInt();
 
-        List<Obstaculo> obstaculos = new ArrayList<>();
+        configurarObstaculos();
+    }
+
+    private static void configurarObstaculos() {
         while (true) {
             System.out.print("Adicionar Obstáculo: (b)omba, (r)ocha ou (s)air: ");
-            String tipo = sc.next();
+            String tipo = scanner.next();
             if (tipo.equalsIgnoreCase("s")) break;
 
             System.out.print("Digite a posição (x y) entre 0 e 3: ");
-            int ox = sc.nextInt();
-            int oy = sc.nextInt();
+            int ox = scanner.nextInt();
+            int oy = scanner.nextInt();
 
             if (tipo.equalsIgnoreCase("b")) {
                 obstaculos.add(new Bomba(ox, oy));
@@ -42,110 +56,116 @@ public class MainComObstaculos {
                 obstaculos.add(new Rocha(ox, oy));
             }
         }
+    }
 
-        Robo vencedor = null;
-        desenharTabuleiro(normal, inteligente, fx, fy, obstaculos);
+    private static void executarCicloDeJogo() {
+        desenharTabuleiro(normal, inteligente, foodX, foodY, obstaculos);
 
-        while (vencedor == null && (normal.isAtivo() || inteligente.isAtivo())) {
+        while (jogoEstaRodando()) {
+            tentarMoverRobo(normal, "[Normal]");
+            tentarMoverRobo(inteligente, "[Inteligente]");
 
-            if (normal.isAtivo() && !normal.encontrou(fx, fy)) {
-                try {
-                    normal.mover(1 + rand.nextInt(4)); // Tenta mover
+            desenharTabuleiro(normal, inteligente, foodX, foodY, obstaculos);
+            verificarVencedor();
+            pausar(500);
 
-                    Obstaculo obs = checarColisao(normal.getX(), normal.getY(), obstaculos);
-                    if (obs != null) {
-                        obs.bater(normal);
-                    }
-                } catch (MovimentoInvalidoException e) {
-                    System.out.println("[Normal] " + e.getMessage());
-                }
-            }
-
-            if (inteligente.isAtivo() && !inteligente.encontrou(fx, fy)) {
-                try {
-                    inteligente.mover(1 + rand.nextInt(4)); // Tenta mover
-
-                    Obstaculo obs = checarColisao(inteligente.getX(), inteligente.getY(), obstaculos);
-                    if (obs != null) {
-                        obs.bater(inteligente);
-                    }
-                } catch (MovimentoInvalidoException e) {
-                    System.out.println("[Inteligente] Bateu na borda, recalculando...");
-                }
-            }
-
-            desenharTabuleiro(normal, inteligente, fx, fy, obstaculos);
-
-            if (normal.isAtivo() && normal.encontrou(fx, fy)) {
-                vencedor = normal;
-            } else if (inteligente.isAtivo() && inteligente.encontrou(fx, fy)) {
-                vencedor = inteligente;
-            } else if (!normal.isAtivo() && !inteligente.isAtivo()) {
+            if (todosRobosDestruidos()) {
                 System.out.println("AMBOS OS ROBÔS EXPLODIRAM!");
                 break;
             }
-
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {}
         }
+    }
 
+    private static boolean jogoEstaRodando() {
+        return vencedor == null && (normal.isAtivo() || inteligente.isAtivo());
+    }
+
+    private static boolean todosRobosDestruidos() {
+        return !normal.isAtivo() && !inteligente.isAtivo();
+    }
+
+    private static void tentarMoverRobo(Robo robo, String prefixoLog) {
+        if (!robo.isAtivo() || robo.encontrou(foodX, foodY)) return;
+
+        try {
+            robo.mover(1 + random.nextInt(4));
+            processarInteracaoObstaculos(robo);
+        } catch (MovimentoInvalidoException e) {
+            if (robo instanceof RoboInteligente) {
+                System.out.println(prefixoLog + " Bateu na borda, recalculando...");
+            } else {
+                System.out.println(prefixoLog + " " + e.getMessage());
+            }
+        }
+    }
+
+    private static void processarInteracaoObstaculos(Robo robo) {
+        for (Obstaculo obs : obstaculos) {
+            if (obs.getX() == robo.getX() && obs.getY() == robo.getY()) {
+                obs.bater(robo);
+                // Não precisamos continuar procurando se ele já bateu em algo nesta casa
+                return;
+            }
+        }
+    }
+
+    private static void verificarVencedor() {
+        if (normal.isAtivo() && normal.encontrou(foodX, foodY)) {
+            vencedor = normal;
+        } else if (inteligente.isAtivo() && inteligente.encontrou(foodX, foodY)) {
+            vencedor = inteligente;
+        }
+    }
+
+    private static void exibirResultados() {
         System.out.println("\n=== FIM DE JOGO ===");
         if (vencedor != null) {
             System.out.println("O robô " + vencedor.getCor() + " encontrou o alimento!");
         }
-        System.out.println("Robô Normal -> válidos: " + normal.getMovimentosValidos() + ", inválidos: " + normal.getMovimentosInvalidos());
-        System.out.println("Robô Inteligente -> válidos: " + inteligente.getMovimentosValidos() + ", inválidos: " + inteligente.getMovimentosInvalidos());
-
-        sc.close();
+        imprimirStats(normal, "Robô Normal");
+        imprimirStats(inteligente, "Robô Inteligente");
     }
 
-    public static Obstaculo checarColisao(int x, int y, List<Obstaculo> obstaculos) {
-        for (Obstaculo obs : obstaculos) {
-            if (obs.getX() == x && obs.getY() == y) {
-                return obs;
-            }
+    private static void imprimirStats(Robo robo, String nome) {
+        System.out.println(nome + " -> válidos: " + robo.getMovimentosValidos() +
+                ", inválidos: " + robo.getMovimentosInvalidos());
+    }
+
+    private static void pausar(int ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
-        return null;
     }
 
     public static void desenharTabuleiro(Robo r1, Robo r2, int foodX, int foodY, List<Obstaculo> obstaculos) {
         char[][] tabuleiro = new char[TAMANHO][TAMANHO];
 
+        // Inicializa tabuleiro vazio
         for (int i = 0; i < TAMANHO; i++) {
             for (int j = 0; j < TAMANHO; j++) {
                 tabuleiro[i][j] = '.';
             }
         }
 
-        if (foodX >= 0 && foodX < TAMANHO && foodY >= 0 && foodY < TAMANHO) {
+        // Coloca Comida
+        if (posicaoValida(foodX, foodY)) {
             tabuleiro[foodY][foodX] = 'A';
         }
 
+        // Coloca Obstaculos
         for (Obstaculo obs : obstaculos) {
-            if (obs.getX() >= 0 && obs.getX() < TAMANHO && obs.getY() >= 0 && obs.getY() < TAMANHO) {
+            if (posicaoValida(obs.getX(), obs.getY())) {
                 tabuleiro[obs.getY()][obs.getX()] = obs.getSimbolo();
             }
         }
 
-        if (r1.isAtivo()) {
-            int r1X = r1.getX(), r1Y = r1.getY();
-            if (r1X >= 0 && r1X < TAMANHO && r1Y >= 0 && r1Y < TAMANHO) {
-                tabuleiro[r1Y][r1X] = r1.getCor().toUpperCase().charAt(0);
-            }
-        }
+        // Coloca Robos
+        plotarRobo(tabuleiro, r1);
+        plotarRobo(tabuleiro, r2);
 
-        if (r2.isAtivo()) {
-            int r2X = r2.getX(), r2Y = r2.getY();
-            if (r2X >= 0 && r2X < TAMANHO && r2Y >= 0 && r2Y < TAMANHO) {
-                if (tabuleiro[r2Y][r2X] != '.') {
-                    tabuleiro[r2Y][r2X] = 'X';
-                } else {
-                    tabuleiro[r2Y][r2X] = r2.getCor().toUpperCase().charAt(0);
-                }
-            }
-        }
-
+        // Imprime
         System.out.println("\n--- TABULEIRO ---");
         for (int i = 0; i < TAMANHO; i++) {
             for (int j = 0; j < TAMANHO; j++) {
@@ -154,5 +174,21 @@ public class MainComObstaculos {
             System.out.println();
         }
         System.out.println("-----------------");
+    }
+
+    private static void plotarRobo(char[][] tabuleiro, Robo r) {
+        if (r.isAtivo() && posicaoValida(r.getX(), r.getY())) {
+            char simbolo = r.getCor().toUpperCase().charAt(0);
+            // Se já tem alguém lá (colisão visual), marca X, senão marca a letra
+            if (tabuleiro[r.getY()][r.getX()] != '.' && tabuleiro[r.getY()][r.getX()] != 'A') {
+                tabuleiro[r.getY()][r.getX()] = 'X';
+            } else {
+                tabuleiro[r.getY()][r.getX()] = simbolo;
+            }
+        }
+    }
+
+    private static boolean posicaoValida(int x, int y) {
+        return x >= 0 && x < TAMANHO && y >= 0 && y < TAMANHO;
     }
 }

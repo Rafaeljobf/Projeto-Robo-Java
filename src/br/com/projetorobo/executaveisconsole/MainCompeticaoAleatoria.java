@@ -1,74 +1,88 @@
 package br.com.projetorobo.executaveisconsole;
 
-import br.com.projetorobo.classesrobo.*;
+import br.com.projetorobo.classesrobo.MovimentoInvalidoException;
+import br.com.projetorobo.classesrobo.Robo;
 
+import java.util.InputMismatchException;
 import java.util.Random;
 import java.util.Scanner;
-/*
-* QUESTAO 3 DO TRABALHO
-* */
+
 public class MainCompeticaoAleatoria {
+
+    private static final Scanner scanner = new Scanner(System.in);
+    private static final Random random = new Random();
+
+    // Estado do Jogo
+    private static Robo robo1;
+    private static Robo robo2;
+    private static int foodX, foodY;
+    private static Robo vencedor = null;
+
     public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        Random rand = new Random();
+        inicializarRobos();
 
-        Robo robo1 = new Robo("Vermelho");
-        Robo robo2 = new Robo("Amarelo");
+        if (configurarAlimento()) {
+            executarCompeticao();
+            exibirResultados();
+        }
 
-        Robo vencedor = null;
+        scanner.close();
+    }
 
+    private static void inicializarRobos() {
+        robo1 = new Robo("Vermelho");
+        robo2 = new Robo("Amarelo");
         System.out.println("=== Cenário 2: Competição Aleatória ===");
+    }
 
-
-        int fx = -1, fy = -1;
+    private static boolean configurarAlimento() {
         try {
             System.out.print("Digite a posição do alimento (x y): ");
-            fx = sc.nextInt();
-            fy = sc.nextInt();
-        } catch (java.util.InputMismatchException e) {
+            foodX = scanner.nextInt();
+            foodY = scanner.nextInt();
+            System.out.println("Alimento definido em: (" + foodX + ", " + foodY + ")");
+            return true;
+        } catch (InputMismatchException e) {
             System.out.println("Entrada inválida. As posições devem ser números inteiros.");
-            sc.close();
-            return;
+            return false;
         }
+    }
 
-        System.out.println("Alimento definido em: (" + fx + ", " + fy + ")");
-
-
+    private static void executarCompeticao() {
         while (vencedor == null) {
-
-            if (vencedor == null) {
-                try {
-                    robo1.mover(1 + rand.nextInt(4));
-                } catch (MovimentoInvalidoException e) {
-
-                    System.out.println("[Robô Vermelho] " + e.getMessage());
-                }
-                if (robo1.encontrou(fx, fy)) {
-                    vencedor = robo1;
-                }
-            }
-
-
-            if (vencedor == null) {
-                try {
-                    robo2.mover(1 + rand.nextInt(4));
-                } catch (MovimentoInvalidoException e) {
-
-                    System.out.println("[Robô Amarelo] " + e.getMessage());
-                }
-                if (robo2.encontrou(fx, fy)) {
-                    vencedor = robo2;
-                }
+            if (realizarTurno(robo1)) {
+                vencedor = robo1;
+            } else if (realizarTurno(robo2)) {
+                vencedor = robo2;
             }
         }
+    }
 
+    // Método genérico: Serve para QUALQUER robô (elimina duplicação)
+    private static boolean realizarTurno(Robo robo) {
+        try {
+            int direcao = 1 + random.nextInt(4);
+            robo.mover(direcao);
+        } catch (MovimentoInvalidoException e) {
+            System.out.println("[Robô " + robo.getCor() + "] " + e.getMessage());
+        }
 
+        return robo.encontrou(foodX, foodY);
+    }
+
+    private static void exibirResultados() {
         System.out.println("\n=== RESULTADO DA COMPETIÇÃO ===");
-        System.out.println("O robô " + vencedor.getCor() + " achou o alimento primeiro!");
+        if (vencedor != null) {
+            System.out.println("O robô " + vencedor.getCor() + " achou o alimento primeiro!");
+        }
         System.out.println("---------------------------------");
-        System.out.println("Robô Vermelho -> válidos: " + robo1.getMovimentosValidos() + ", inválidos: " + robo1.getMovimentosInvalidos());
-        System.out.println("Robô Amarelo -> válidos: " + robo2.getMovimentosValidos() + ", inválidos: " + robo2.getMovimentosInvalidos());
+        imprimirEstatisticas(robo1);
+        imprimirEstatisticas(robo2);
+    }
 
-        sc.close();
+    private static void imprimirEstatisticas(Robo robo) {
+        System.out.println("Robô " + robo.getCor() +
+                " -> válidos: " + robo.getMovimentosValidos() +
+                ", inválidos: " + robo.getMovimentosInvalidos());
     }
 }
